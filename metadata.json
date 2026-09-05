@@ -1,0 +1,6 @@
+{
+  "name": "e-Bidding Analytics & Estimation",
+  "description": "ระบบจัดเก็บและวิเคราะห์ข้อมูล e-Bidding วิเคราะห์ผลต่างราคากลาง-งบประมาณ คำนวณโครงสร้างราคาแรงงาน วัสดุอุปกรณ์ และเชื่อมต่อ Google Sheets",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
