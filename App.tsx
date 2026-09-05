@@ -33,6 +33,10 @@ export default function App() {
   const [spreadsheetId, setSpreadsheetId] = useState<string | null>(null);
   const [spreadsheetUrl, setSpreadsheetUrl] = useState<string | null>(null);
   const [isTokenActive, setIsTokenActive] = useState(false);
+  // Which sheet tab holds the project rows for THIS spreadsheet ('eBidding_Projects' is the
+  // default created by the "New Spreadsheet" flow; 'eBidding_Data' is used by the Apps Script
+  // backend). Detected on load, defaults to 'eBidding_Projects' for brand-new sheets.
+  const [activeSheetTab, setActiveSheetTab] = useState<string>('eBidding_Projects');
 
   // Check and auto pull from Google Sheets on mount if connected
   useEffect(() => {
@@ -51,20 +55,33 @@ export default function App() {
     }
 
     if (savedToken && savedSheetId) {
-      readSheetRows(savedToken, savedSheetId, 'eBidding_Data!A2:V1000')
-        .then((rawRows) => {
-          const sheetProjects: EBiddingProject[] = [];
-          rawRows.forEach((row, i) => {
-            const p = parseSheetRowToProject(row, i);
-            if (p) sheetProjects.push(p);
-          });
-          if (sheetProjects.length > 0) {
-            setProjects(sheetProjects);
+      // The tab may be named 'eBidding_Projects' (created by the in-app "New Spreadsheet"
+      // flow) or 'eBidding_Data' (created by the Apps Script backend). Try both.
+      const tryReadSheet = async () => {
+        for (const tabName of ['eBidding_Projects', 'eBidding_Data']) {
+          try {
+            const rawRows = await readSheetRows(savedToken, savedSheetId, `${tabName}!A2:V1000`);
+            if (rawRows.length > 0) {
+              setActiveSheetTab(tabName);
+              return rawRows;
+            }
+          } catch (err) {
+            console.log(`Auto-fetch from tab "${tabName}" notice:`, (err as Error).message);
           }
-        })
-        .catch((err) => {
-          console.log('Auto-fetch from Google Sheet notice:', err.message);
+        }
+        return [];
+      };
+
+      tryReadSheet().then((rawRows) => {
+        const sheetProjects: EBiddingProject[] = [];
+        rawRows.forEach((row, i) => {
+          const p = parseSheetRowToProject(row, i);
+          if (p) sheetProjects.push(p);
         });
+        if (sheetProjects.length > 0) {
+          setProjects(sheetProjects);
+        }
+      });
     }
   }, []);
 
@@ -95,7 +112,7 @@ export default function App() {
     if (savedToken && targetSheetId) {
       try {
         const row = projectToSheetRow(savedProject);
-        await appendSheetRows(savedToken, targetSheetId, 'eBidding_Data!A:V', [row]);
+        await appendSheetRows(savedToken, targetSheetId, `${activeSheetTab}!A:V`, [row]);
       } catch (err) {
         console.error('Failed to auto-append to Google Sheet:', err);
       }

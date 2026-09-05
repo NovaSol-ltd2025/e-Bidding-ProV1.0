@@ -5,6 +5,9 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    // Repo is served from https://novasol-ltd2025.github.io/e-Bidding-ProV1.0/
+    // so all built asset paths must be prefixed with the repo name.
+    base: '/e-Bidding-ProV1.0/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
